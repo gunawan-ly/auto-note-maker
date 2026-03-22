@@ -7,12 +7,13 @@ export function useNotebooks() {
     []
   );
 
-  const createNotebook = async (title: string, coverColor: string, coverEmoji: string) => {
+  const createNotebook = async (title: string, coverColor: string, coverEmoji: string, coverImage?: string) => {
     const now = new Date();
     const notebookId = await db.notebooks.add({
       title,
       coverColor,
       coverEmoji,
+      coverImage,
       createdAt: now,
       updatedAt: now,
     });

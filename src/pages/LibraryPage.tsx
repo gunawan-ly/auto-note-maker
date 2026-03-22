@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Plus,
@@ -8,6 +8,8 @@ import {
   BookOpen,
   Pencil,
   Trash2,
+  Upload,
+  X,
 } from 'lucide-react';
 import { useNotebooks } from '../hooks/useNotebooks';
 
@@ -45,6 +47,8 @@ export function LibraryPage() {
   const [newTitle, setNewTitle] = useState('');
   const [newColor, setNewColor] = useState(COVER_COLORS[0]);
   const [newEmoji, setNewEmoji] = useState(COVER_EMOJIS[0]);
+  const [newCoverImage, setNewCoverImage] = useState<string | undefined>(undefined);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Edit dialog state
   const [editTitle, setEditTitle] = useState('');
@@ -57,12 +61,32 @@ export function LibraryPage() {
     [notebooks, search]
   );
 
+  const handleCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setNewCoverImage(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeCoverImage = () => {
+    setNewCoverImage(undefined);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleCreate = async () => {
     if (!newTitle.trim()) return;
-    const id = await createNotebook(newTitle.trim(), newColor, newEmoji);
+    const id = await createNotebook(newTitle.trim(), newColor, newEmoji, newCoverImage);
     setNewTitle('');
     setNewColor(COVER_COLORS[0]);
     setNewEmoji(COVER_EMOJIS[0]);
+    setNewCoverImage(undefined);
     setShowCreateDialog(false);
     navigate(`/notebook/${id}`);
   };
@@ -100,7 +124,7 @@ export function LibraryPage() {
   };
 
   return (
-    <div style={{ minHeight: '100vh' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
       <header className="app-header">
         <div
@@ -181,7 +205,7 @@ export function LibraryPage() {
       </div>
 
       {/* Notebooks */}
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px', flex: 1 }}>
         {filteredNotebooks.length === 0 && !search ? (
           <div className="empty-state">
             <div className="empty-state-icon">📚</div>
@@ -239,9 +263,12 @@ export function LibraryPage() {
                 </div>
                 <div
                   className="notebook-cover"
-                  style={{ background: nb.coverColor }}
+                  style={{
+                    background: nb.coverImage ? `url(${nb.coverImage}) center/cover no-repeat` : nb.coverColor,
+                  }}
                 >
-                  <span>{nb.coverEmoji}</span>
+                  <span className="cover-emoji">{nb.coverEmoji}</span>
+                  <div className="cover-title">{nb.title}</div>
                 </div>
                 <div style={{ padding: '14px 16px' }}>
                   <div
@@ -289,7 +316,7 @@ export function LibraryPage() {
                     width: '44px',
                     height: '44px',
                     borderRadius: '10px',
-                    background: nb.coverColor,
+                    background: nb.coverImage ? `url(${nb.coverImage}) center/cover no-repeat` : nb.coverColor,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -337,10 +364,22 @@ export function LibraryPage() {
         )}
       </div>
 
+      {/* Footer */}
+      <footer className="app-footer">
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px 24px', textAlign: 'center' }}>
+          <p style={{ color: '#636e72', fontSize: '0.85rem', margin: 0 }}>
+            © {new Date().getFullYear()} <span style={{ color: '#a29bfe', fontWeight: 600 }}>Auto Note Maker</span>. All rights reserved.
+          </p>
+          <p style={{ color: '#4a5568', fontSize: '0.75rem', marginTop: '4px' }}>
+            Developed by <span style={{ color: '#fd79a8', fontWeight: 600 }}>Awanophile</span>
+          </p>
+        </div>
+      </footer>
+
       {/* Create Dialog */}
       {showCreateDialog && (
         <div className="dialog-overlay" onClick={() => setShowCreateDialog(false)}>
-          <div className="dialog-content" onClick={(e) => e.stopPropagation()}>
+          <div className="dialog-content dialog-scrollable" onClick={(e) => e.stopPropagation()}>
             <div className="dialog-title">📓 Buat Notebook Baru</div>
 
             <label style={{ color: '#b2bec3', fontSize: '13px', fontWeight: 500, marginBottom: '6px', display: 'block' }}>
@@ -355,8 +394,36 @@ export function LibraryPage() {
               autoFocus
             />
 
+            {/* Cover Photo Upload */}
             <label style={{ color: '#b2bec3', fontSize: '13px', fontWeight: 500, marginTop: '20px', marginBottom: '6px', display: 'block' }}>
-              Warna Sampul
+              Foto Sampul (opsional)
+            </label>
+            {newCoverImage ? (
+              <div className="cover-preview-container">
+                <img src={newCoverImage} alt="Cover preview" className="cover-preview-img" />
+                <button className="cover-preview-remove" onClick={removeCoverImage}>
+                  <X size={14} />
+                </button>
+              </div>
+            ) : (
+              <button
+                className="cover-upload-btn"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Upload size={20} />
+                <span>Upload Foto Sampul</span>
+              </button>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={handleCoverUpload}
+            />
+
+            <label style={{ color: '#b2bec3', fontSize: '13px', fontWeight: 500, marginTop: '20px', marginBottom: '6px', display: 'block' }}>
+              {newCoverImage ? 'Warna Cadangan' : 'Warna Sampul'}
             </label>
             <div className="color-grid">
               {COVER_COLORS.map((c) => (

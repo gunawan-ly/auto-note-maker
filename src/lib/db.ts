@@ -5,6 +5,7 @@ export interface Notebook {
   title: string;
   coverColor: string;
   coverEmoji: string;
+  coverImage?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -25,6 +26,10 @@ class AutoNoteDB extends Dexie {
   constructor() {
     super('AutoNoteDB');
     this.version(1).stores({
+      notebooks: '++id, title, createdAt, updatedAt',
+      pages: '++id, notebookId, pageNumber, createdAt, updatedAt',
+    });
+    this.version(2).stores({
       notebooks: '++id, title, createdAt, updatedAt',
       pages: '++id, notebookId, pageNumber, createdAt, updatedAt',
     });

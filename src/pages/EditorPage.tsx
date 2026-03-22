@@ -28,6 +28,11 @@ import {
   FileImage,
   FileText,
   Check,
+  ListOrdered,
+  List,
+  Indent,
+  Outdent,
+  FilePlus,
 } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../lib/db';
@@ -70,6 +75,16 @@ export function EditorPage() {
         blockquote: false,
         horizontalRule: false,
         underline: false,
+        bulletList: {
+          HTMLAttributes: {
+            class: 'notebook-bullet-list',
+          },
+        },
+        orderedList: {
+          HTMLAttributes: {
+            class: 'notebook-ordered-list',
+          },
+        },
       }),
       Underline,
       TextAlign.configure({
@@ -101,6 +116,28 @@ export function EditorPage() {
     editorProps: {
       attributes: {
         class: 'tiptap-editor',
+      },
+      handleKeyDown: (_view, event) => {
+        // Tab indent functionality
+        if (event.key === 'Tab') {
+          event.preventDefault();
+          if (event.shiftKey) {
+            // Outdent
+            if (editor?.isActive('bulletList') || editor?.isActive('orderedList')) {
+              editor?.chain().focus().liftListItem('listItem').run();
+            }
+          } else {
+            // Indent
+            if (editor?.isActive('bulletList') || editor?.isActive('orderedList')) {
+              editor?.chain().focus().sinkListItem('listItem').run();
+            } else {
+              // Regular tab indent for paragraphs
+              editor?.chain().focus().insertContent('\u00A0\u00A0\u00A0\u00A0').run();
+            }
+          }
+          return true;
+        }
+        return false;
       },
     },
   });
@@ -286,9 +323,10 @@ export function EditorPage() {
               <button
                 className="page-btn"
                 onClick={addNewPage}
-                title="Tambah halaman"
+                title="Tambah halaman baru"
+                style={{ background: 'rgba(108, 92, 231, 0.15)', color: '#a29bfe' }}
               >
-                <Plus size={16} />
+                <FilePlus size={16} />
               </button>
             </div>
           </div>
@@ -344,6 +382,50 @@ export function EditorPage() {
             title="Rata Kanan"
           >
             <AlignRight size={16} />
+          </button>
+
+          <div className="toolbar-divider" />
+
+          {/* Lists */}
+          <button
+            className={`toolbar-btn ${editor?.isActive('bulletList') ? 'is-active' : ''}`}
+            onClick={() => editor?.chain().focus().toggleBulletList().run()}
+            title="Bullet List"
+          >
+            <List size={16} />
+          </button>
+          <button
+            className={`toolbar-btn ${editor?.isActive('orderedList') ? 'is-active' : ''}`}
+            onClick={() => editor?.chain().focus().toggleOrderedList().run()}
+            title="Numbered List"
+          >
+            <ListOrdered size={16} />
+          </button>
+
+          {/* Indent / Outdent */}
+          <button
+            className="toolbar-btn"
+            onClick={() => {
+              if (editor?.isActive('bulletList') || editor?.isActive('orderedList')) {
+                editor?.chain().focus().sinkListItem('listItem').run();
+              } else {
+                editor?.chain().focus().insertContent('\u00A0\u00A0\u00A0\u00A0').run();
+              }
+            }}
+            title="Indent (Tab)"
+          >
+            <Indent size={16} />
+          </button>
+          <button
+            className="toolbar-btn"
+            onClick={() => {
+              if (editor?.isActive('bulletList') || editor?.isActive('orderedList')) {
+                editor?.chain().focus().liftListItem('listItem').run();
+              }
+            }}
+            title="Outdent (Shift+Tab)"
+          >
+            <Outdent size={16} />
           </button>
 
           <div className="toolbar-divider" />
@@ -453,11 +535,26 @@ export function EditorPage() {
         </div>
       </div>
 
-      {/* Paper Area */}
+      {/* Paper Area - Fixed Size */}
       <div className="paper-container">
         <div className="paper-scale-wrapper">
           <div ref={paperRef} className="notebook-paper">
             <EditorContent editor={editor} />
+          </div>
+          {/* New Page Button below paper */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            marginTop: '16px',
+            marginBottom: '24px',
+          }}>
+            <button
+              onClick={addNewPage}
+              className="btn-add-page"
+            >
+              <Plus size={16} />
+              Halaman Baru
+            </button>
           </div>
         </div>
       </div>
