@@ -6,10 +6,9 @@ import {
   LayoutGrid,
   List,
   BookOpen,
-  Pencil,
-  Trash2,
   Upload,
   X,
+  MoreVertical,
 } from 'lucide-react';
 import { useNotebooks } from '../hooks/useNotebooks';
 
@@ -42,6 +41,7 @@ export function LibraryPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState<number | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState<number | null>(null);
+  const [actionSheetNotebook, setActionSheetNotebook] = useState<number | null>(null);
 
   // Create dialog state
   const [newTitle, setNewTitle] = useState('');
@@ -104,24 +104,41 @@ export function LibraryPage() {
     setShowDeleteDialog(null);
   };
 
-  const openEditDialog = (e: React.MouseEvent, id: number, title: string) => {
+  const openActionSheet = (e: React.MouseEvent, id: number) => {
     e.stopPropagation();
-    setEditTitle(title);
-    setShowEditDialog(id);
+    setActionSheetNotebook(id);
   };
 
-  const openDeleteDialog = (e: React.MouseEvent, id: number) => {
-    e.stopPropagation();
-    setShowDeleteDialog(id);
+  const handleActionEdit = () => {
+    if (actionSheetNotebook === null) return;
+    const nb = notebooks.find((n) => n.id === actionSheetNotebook);
+    if (nb) {
+      setEditTitle(nb.title);
+      setShowEditDialog(actionSheetNotebook);
+    }
+    setActionSheetNotebook(null);
+  };
+
+  const handleActionDelete = () => {
+    if (actionSheetNotebook === null) return;
+    setShowDeleteDialog(actionSheetNotebook);
+    setActionSheetNotebook(null);
   };
 
   const formatDate = (date: Date) => {
     return new Date(date).toLocaleDateString('id-ID', {
-      day: 'numeric',
-      month: 'short',
       year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }) + ' ' + new Date(date).toLocaleTimeString('id-ID', {
+      hour: '2-digit',
+      minute: '2-digit',
     });
   };
+
+  const actionSheetNb = actionSheetNotebook !== null
+    ? notebooks.find((nb) => nb.id === actionSheetNotebook)
+    : null;
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -129,99 +146,73 @@ export function LibraryPage() {
       <header className="app-header">
         <div
           style={{
-            maxWidth: '1200px',
+            maxWidth: '600px',
             margin: '0 auto',
-            padding: '16px 24px',
+            padding: '14px 20px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <BookOpen size={28} color="#6c5ce7" />
-            <h1
-              style={{
-                fontSize: '1.4rem',
-                fontWeight: 800,
-                background: 'linear-gradient(135deg, #6c5ce7, #a29bfe)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}
-            >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <BookOpen size={24} color="#AF52DE" />
+            <h1 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)' }}>
               Auto Note Maker
             </h1>
           </div>
-          <button
-            className="btn-primary"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-            }}
-            onClick={() => setShowCreateDialog(true)}
-          >
-            <Plus size={18} />
-            Buku Baru
-          </button>
+          <div className="view-toggle">
+            <button
+              className={`view-toggle-btn ${viewMode === 'grid' ? 'active' : ''}`}
+              onClick={() => setViewMode('grid')}
+            >
+              <LayoutGrid size={16} />
+            </button>
+            <button
+              className={`view-toggle-btn ${viewMode === 'list' ? 'active' : ''}`}
+              onClick={() => setViewMode('list')}
+            >
+              <List size={16} />
+            </button>
+          </div>
         </div>
       </header>
 
-      {/* Controls */}
-      <div
-        style={{
-          maxWidth: '1200px',
-          margin: '0 auto',
-          padding: '24px 24px 0',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '12px',
-        }}
-      >
-        <div className="search-wrapper">
+      {/* Search */}
+      <div style={{ maxWidth: '600px', margin: '0 auto', padding: '16px 20px 0', width: '100%' }}>
+        <div className="search-wrapper" style={{ width: '100%' }}>
           <Search size={16} className="search-icon" />
           <input
             className="search-input"
             placeholder="Cari notebook..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            style={{ width: '100%' }}
           />
-        </div>
-        <div className="view-toggle">
-          <button
-            className={`view-toggle-btn ${viewMode === 'grid' ? 'active' : ''}`}
-            onClick={() => setViewMode('grid')}
-          >
-            <LayoutGrid size={16} />
-          </button>
-          <button
-            className={`view-toggle-btn ${viewMode === 'list' ? 'active' : ''}`}
-            onClick={() => setViewMode('list')}
-          >
-            <List size={16} />
-          </button>
         </div>
       </div>
 
-      {/* Notebooks */}
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px', flex: 1 }}>
+      {/* Notebooks Grid */}
+      <div style={{ maxWidth: '600px', margin: '0 auto', padding: '20px', flex: 1, width: '100%' }}>
         {filteredNotebooks.length === 0 && !search ? (
-          <div className="empty-state">
-            <div className="empty-state-icon">📚</div>
-            <div className="empty-state-title">Belum ada notebook</div>
-            <div className="empty-state-desc">
-              Mulai buat notebook pertamamu dan tulis catatan dengan tampilan
-              buku tulis yang indah!
+          <div>
+            {/* Show just the create card when empty */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+              <div className="notebook-card-ios">
+                <button className="create-card-ios" onClick={() => setShowCreateDialog(true)}>
+                  <div className="create-icon-ios">
+                    <Plus size={24} />
+                  </div>
+                  <span className="create-label-ios">Buat</span>
+                </button>
+              </div>
             </div>
-            <button
-              className="btn-primary"
-              style={{ marginTop: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}
-              onClick={() => setShowCreateDialog(true)}
-            >
-              <Plus size={18} />
-              Buat Notebook
-            </button>
+            <div className="empty-state" style={{ padding: '40px 20px' }}>
+              <div className="empty-state-icon">📚</div>
+              <div className="empty-state-title">Belum ada notebook</div>
+              <div className="empty-state-desc">
+                Tap "Buat" untuk membuat notebook pertamamu!
+              </div>
+            </div>
           </div>
         ) : filteredNotebooks.length === 0 && search ? (
           <div className="empty-state">
@@ -232,132 +223,115 @@ export function LibraryPage() {
             </div>
           </div>
         ) : viewMode === 'grid' ? (
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-              gap: '20px',
-            }}
-          >
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+            {/* Create card - first item */}
+            <div className="notebook-card-ios">
+              <button className="create-card-ios" onClick={() => setShowCreateDialog(true)}>
+                <div className="create-icon-ios">
+                  <Plus size={24} />
+                </div>
+                <span className="create-label-ios">Buat</span>
+              </button>
+            </div>
+
+            {/* Notebook cards */}
             {filteredNotebooks.map((nb) => (
-              <div
-                key={nb.id}
-                className="glass-card notebook-card"
-                onClick={() => navigate(`/notebook/${nb.id}`)}
-              >
-                <div className="notebook-actions">
-                  <button
-                    className="action-btn"
-                    onClick={(e) => openEditDialog(e, nb.id!, nb.title)}
-                    title="Edit"
-                  >
-                    <Pencil size={14} />
-                  </button>
-                  <button
-                    className="action-btn danger"
-                    onClick={(e) => openDeleteDialog(e, nb.id!)}
-                    title="Hapus"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
+              <div key={nb.id} className="notebook-card-ios">
                 <div
-                  className="notebook-cover"
+                  className="notebook-cover-ios"
                   style={{
-                    background: nb.coverImage ? `url(${nb.coverImage}) center/cover no-repeat` : nb.coverColor,
+                    background: nb.coverImage
+                      ? `url(${nb.coverImage}) center/cover no-repeat`
+                      : nb.coverColor,
                   }}
+                  onClick={() => navigate(`/notebook/${nb.id}`)}
                 >
-                  <span className="cover-emoji">{nb.coverEmoji}</span>
-                  <div className="cover-title">{nb.title}</div>
+                  <span className="cover-emoji-ios">{nb.coverEmoji}</span>
+                  <span className="cover-title-ios">{nb.title}</span>
                 </div>
-                <div style={{ padding: '14px 16px' }}>
-                  <div
-                    style={{
-                      color: 'white',
-                      fontWeight: 600,
-                      fontSize: '0.95rem',
-                      marginBottom: '4px',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {nb.title}
+                <div className="notebook-info-ios">
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div className="nb-title">{nb.title}</div>
+                    <div className="nb-date">{formatDate(nb.updatedAt)}</div>
                   </div>
-                  <div
-                    style={{
-                      color: '#636e72',
-                      fontSize: '0.8rem',
-                    }}
+                  <button
+                    className="menu-dots-btn"
+                    onClick={(e) => openActionSheet(e, nb.id!)}
                   >
-                    {formatDate(nb.updatedAt)}
-                  </div>
+                    <MoreVertical size={18} />
+                  </button>
                 </div>
               </div>
             ))}
           </div>
         ) : (
+          /* List view */
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <button
+              className="squircle-card"
+              onClick={() => setShowCreateDialog(true)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '14px',
+                padding: '14px 18px',
+                border: 'none',
+                fontFamily: 'inherit',
+                width: '100%',
+                textAlign: 'left',
+              }}
+            >
+              <div className="create-icon-ios" style={{ width: 44, height: 44, flexShrink: 0 }}>
+                <Plus size={20} />
+              </div>
+              <span style={{ color: 'var(--ios-blue)', fontWeight: 500, fontSize: '0.95rem' }}>
+                Buat Notebook Baru
+              </span>
+            </button>
+
             {filteredNotebooks.map((nb) => (
               <div
                 key={nb.id}
-                className="glass-card"
-                onClick={() => navigate(`/notebook/${nb.id}`)}
+                className="squircle-card"
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '16px',
-                  padding: '14px 20px',
-                  cursor: 'pointer',
+                  gap: '14px',
+                  padding: '14px 18px',
                 }}
               >
                 <div
                   style={{
-                    width: '44px',
-                    height: '44px',
-                    borderRadius: '10px',
-                    background: nb.coverImage ? `url(${nb.coverImage}) center/cover no-repeat` : nb.coverColor,
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '14px',
+                    background: nb.coverImage
+                      ? `url(${nb.coverImage}) center/cover no-repeat`
+                      : nb.coverColor,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontSize: '1.4rem',
                     flexShrink: 0,
                   }}
+                  onClick={() => navigate(`/notebook/${nb.id}`)}
                 >
                   {nb.coverEmoji}
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div
-                    style={{
-                      color: 'white',
-                      fontWeight: 600,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
+                <div style={{ flex: 1, minWidth: 0 }} onClick={() => navigate(`/notebook/${nb.id}`)}>
+                  <div style={{ fontWeight: 600, fontSize: '0.95rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {nb.title}
                   </div>
-                  <div style={{ color: '#636e72', fontSize: '0.8rem' }}>
+                  <div style={{ color: 'var(--text-tertiary)', fontSize: '0.78rem', marginTop: '2px' }}>
                     {formatDate(nb.updatedAt)}
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: '4px' }}>
-                  <button
-                    className="action-btn"
-                    onClick={(e) => openEditDialog(e, nb.id!, nb.title)}
-                    title="Edit"
-                  >
-                    <Pencil size={14} />
-                  </button>
-                  <button
-                    className="action-btn danger"
-                    onClick={(e) => openDeleteDialog(e, nb.id!)}
-                    title="Hapus"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
+                <button
+                  className="menu-dots-btn"
+                  onClick={(e) => openActionSheet(e, nb.id!)}
+                >
+                  <MoreVertical size={18} />
+                </button>
               </div>
             ))}
           </div>
@@ -366,15 +340,42 @@ export function LibraryPage() {
 
       {/* Footer */}
       <footer className="app-footer">
-        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px 24px', textAlign: 'center' }}>
-          <p style={{ color: '#636e72', fontSize: '0.85rem', margin: 0 }}>
-            © {new Date().getFullYear()} <span style={{ color: '#a29bfe', fontWeight: 600 }}>Auto Note Maker</span>. All rights reserved.
+        <div style={{ maxWidth: '600px', margin: '0 auto', padding: '16px 20px', textAlign: 'center' }}>
+          <p style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem', margin: 0 }}>
+            © {new Date().getFullYear()} <span style={{ fontWeight: 600 }}>Auto Note Maker</span>
           </p>
-          <p style={{ color: '#4a5568', fontSize: '0.75rem', marginTop: '4px' }}>
-            Developed by <span style={{ color: '#fd79a8', fontWeight: 600 }}>Awanophile</span>
+          <p style={{ color: 'var(--text-quaternary)', fontSize: '0.7rem', marginTop: '2px' }}>
+            Developed by <span style={{ color: 'var(--ios-pink)', fontWeight: 600 }}>Awanophile</span>
           </p>
         </div>
       </footer>
+
+      {/* ===== iOS Action Sheet ===== */}
+      {actionSheetNotebook !== null && (
+        <div className="action-sheet-overlay" onClick={() => setActionSheetNotebook(null)}>
+          <div className="action-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="action-sheet-group">
+              {actionSheetNb && (
+                <div className="action-sheet-header">
+                  <div className="as-title">{actionSheetNb.title}</div>
+                </div>
+              )}
+              <button className="action-sheet-btn" onClick={handleActionEdit}>
+                Edit
+              </button>
+              <button className="action-sheet-btn destructive" onClick={handleActionDelete}>
+                Hapus
+              </button>
+            </div>
+            <button
+              className="action-sheet-btn cancel"
+              onClick={() => setActionSheetNotebook(null)}
+            >
+              Batalkan
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Create Dialog */}
       {showCreateDialog && (
@@ -382,7 +383,7 @@ export function LibraryPage() {
           <div className="dialog-content dialog-scrollable" onClick={(e) => e.stopPropagation()}>
             <div className="dialog-title">📓 Buat Notebook Baru</div>
 
-            <label style={{ color: '#b2bec3', fontSize: '13px', fontWeight: 500, marginBottom: '6px', display: 'block' }}>
+            <label style={{ color: 'var(--text-tertiary)', fontSize: '13px', fontWeight: 500, marginBottom: '6px', display: 'block' }}>
               Judul
             </label>
             <input
@@ -395,7 +396,7 @@ export function LibraryPage() {
             />
 
             {/* Cover Photo Upload */}
-            <label style={{ color: '#b2bec3', fontSize: '13px', fontWeight: 500, marginTop: '20px', marginBottom: '6px', display: 'block' }}>
+            <label style={{ color: 'var(--text-tertiary)', fontSize: '13px', fontWeight: 500, marginTop: '18px', marginBottom: '6px', display: 'block' }}>
               Foto Sampul (opsional)
             </label>
             {newCoverImage ? (
@@ -422,7 +423,7 @@ export function LibraryPage() {
               onChange={handleCoverUpload}
             />
 
-            <label style={{ color: '#b2bec3', fontSize: '13px', fontWeight: 500, marginTop: '20px', marginBottom: '6px', display: 'block' }}>
+            <label style={{ color: 'var(--text-tertiary)', fontSize: '13px', fontWeight: 500, marginTop: '18px', marginBottom: '6px', display: 'block' }}>
               {newCoverImage ? 'Warna Cadangan' : 'Warna Sampul'}
             </label>
             <div className="color-grid">
@@ -436,7 +437,7 @@ export function LibraryPage() {
               ))}
             </div>
 
-            <label style={{ color: '#b2bec3', fontSize: '13px', fontWeight: 500, marginTop: '8px', marginBottom: '6px', display: 'block' }}>
+            <label style={{ color: 'var(--text-tertiary)', fontSize: '13px', fontWeight: 500, marginTop: '6px', marginBottom: '6px', display: 'block' }}>
               Emoji Sampul
             </label>
             <div className="emoji-grid">
@@ -451,14 +452,7 @@ export function LibraryPage() {
               ))}
             </div>
 
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'flex-end',
-                gap: '10px',
-                marginTop: '24px',
-              }}
-            >
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
               <button className="btn-secondary" onClick={() => setShowCreateDialog(false)}>
                 Batal
               </button>
@@ -487,14 +481,7 @@ export function LibraryPage() {
               onKeyDown={(e) => e.key === 'Enter' && handleEdit()}
               autoFocus
             />
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'flex-end',
-                gap: '10px',
-                marginTop: '24px',
-              }}
-            >
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
               <button className="btn-secondary" onClick={() => setShowEditDialog(null)}>
                 Batal
               </button>
@@ -511,21 +498,15 @@ export function LibraryPage() {
         <div className="dialog-overlay" onClick={() => setShowDeleteDialog(null)}>
           <div className="dialog-content" onClick={(e) => e.stopPropagation()}>
             <div className="dialog-title">🗑️ Hapus Notebook?</div>
-            <p style={{ color: '#b2bec3', marginBottom: '24px', lineHeight: 1.6 }}>
-              Semua halaman dalam notebook ini akan dihapus secara permanen. Tindakan ini tidak dapat dibatalkan.
+            <p style={{ color: 'var(--text-tertiary)', marginBottom: '20px', lineHeight: 1.6, textAlign: 'center', fontSize: '0.9rem' }}>
+              Semua halaman dalam notebook ini akan dihapus secara permanen.
             </p>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'flex-end',
-                gap: '10px',
-              }}
-            >
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>
               <button className="btn-secondary" onClick={() => setShowDeleteDialog(null)}>
                 Batal
               </button>
               <button className="btn-danger" onClick={handleDelete}>
-                Hapus Permanen
+                Hapus
               </button>
             </div>
           </div>

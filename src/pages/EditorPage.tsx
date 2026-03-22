@@ -11,7 +11,7 @@ import { TextStyle } from '@tiptap/extension-text-style';
 import { Color } from '@tiptap/extension-color';
 import Placeholder from '@tiptap/extension-placeholder';
 import {
-  ArrowLeft,
+  ChevronLeft,
   Bold,
   Italic,
   Underline as UnderlineIcon,
@@ -22,7 +22,6 @@ import {
   ImagePlus,
   TableIcon,
   Download,
-  ChevronLeft,
   ChevronRight,
   Plus,
   FileImage,
@@ -118,20 +117,16 @@ export function EditorPage() {
         class: 'tiptap-editor',
       },
       handleKeyDown: (_view, event) => {
-        // Tab indent functionality
         if (event.key === 'Tab') {
           event.preventDefault();
           if (event.shiftKey) {
-            // Outdent
             if (editor?.isActive('bulletList') || editor?.isActive('orderedList')) {
               editor?.chain().focus().liftListItem('listItem').run();
             }
           } else {
-            // Indent
             if (editor?.isActive('bulletList') || editor?.isActive('orderedList')) {
               editor?.chain().focus().sinkListItem('listItem').run();
             } else {
-              // Regular tab indent for paragraphs
               editor?.chain().focus().insertContent('\u00A0\u00A0\u00A0\u00A0').run();
             }
           }
@@ -142,7 +137,6 @@ export function EditorPage() {
     },
   });
 
-  // Load page content when page changes
   useEffect(() => {
     if (currentPage && editor && !editor.isDestroyed) {
       const currentHTML = editor.getHTML();
@@ -153,7 +147,6 @@ export function EditorPage() {
     }
   }, [currentPage?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-save
   const handleSave = useCallback(
     async (content: string) => {
       if (currentPage?.id) {
@@ -168,17 +161,12 @@ export function EditorPage() {
 
   useAutoSave(editorContent, handleSave, 600);
 
-  // Page navigation
   const goToPrevPage = () => {
-    if (currentPageIndex > 0) {
-      setCurrentPageIndex(currentPageIndex - 1);
-    }
+    if (currentPageIndex > 0) setCurrentPageIndex(currentPageIndex - 1);
   };
 
   const goToNextPage = () => {
-    if (currentPageIndex < pages.length - 1) {
-      setCurrentPageIndex(currentPageIndex + 1);
-    }
+    if (currentPageIndex < pages.length - 1) setCurrentPageIndex(currentPageIndex + 1);
   };
 
   const addNewPage = async () => {
@@ -187,7 +175,6 @@ export function EditorPage() {
     setCurrentPageIndex(pages.length);
   };
 
-  // Toolbar actions
   const insertImage = () => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -208,11 +195,7 @@ export function EditorPage() {
 
   const insertTable = () => {
     if (editor) {
-      editor
-        .chain()
-        .focus()
-        .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
-        .run();
+      editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
     }
   };
 
@@ -224,7 +207,6 @@ export function EditorPage() {
   const handleExport = async (format: 'png' | 'jpg' | 'pdf') => {
     setShowExportMenu(false);
     if (!paperRef.current) return;
-
     try {
       const fileName = notebook?.title || 'note';
       if (format === 'pdf') {
@@ -238,7 +220,6 @@ export function EditorPage() {
     }
   };
 
-  // Close dropdowns on outside click
   useEffect(() => {
     const handleClick = () => {
       setShowHighlightPicker(false);
@@ -250,10 +231,10 @@ export function EditorPage() {
 
   if (!notebook) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', color: 'white' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: '3rem', marginBottom: '16px' }}>📓</div>
-          <div>Memuat notebook...</div>
+          <div style={{ color: 'var(--text-tertiary)' }}>Memuat notebook...</div>
         </div>
       </div>
     );
@@ -261,82 +242,76 @@ export function EditorPage() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Header */}
+      {/* iOS-style Navigation Bar */}
       <header className="app-header">
         <div
           style={{
-            maxWidth: '1400px',
+            maxWidth: '900px',
             margin: '0 auto',
-            padding: '12px 24px',
+            padding: '10px 16px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: '16px',
+            gap: '12px',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <button className="btn-icon" onClick={() => navigate('/')} title="Kembali ke Library">
-              <ArrowLeft size={18} />
+          {/* Left: Back + Title */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minWidth: 0 }}>
+            <button
+              className="btn-icon"
+              onClick={() => navigate('/')}
+              title="Kembali"
+              style={{ background: 'transparent', color: 'var(--ios-blue)' }}
+            >
+              <ChevronLeft size={24} />
             </button>
-            <div>
-              <h1
-                style={{
-                  fontSize: '1.1rem',
-                  fontWeight: 700,
-                  color: 'white',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  maxWidth: '300px',
-                }}
-              >
-                {notebook.title}
-              </h1>
-            </div>
+            <h1
+              style={{
+                fontSize: '1.05rem',
+                fontWeight: 600,
+                color: 'var(--text-primary)',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                maxWidth: '200px',
+              }}
+            >
+              {notebook.title}
+            </h1>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div className="autosave-indicator">
-              <div className="autosave-dot"></div>
-              <span>Auto-saved</span>
-            </div>
+          {/* Center: Page Navigation */}
+          <div className="page-indicator">
+            <button className="page-btn" onClick={goToPrevPage} disabled={currentPageIndex === 0}>
+              <ChevronLeft size={16} />
+            </button>
+            <span style={{ color: 'var(--text-tertiary)', fontSize: '13px', minWidth: '50px', textAlign: 'center', fontWeight: 500 }}>
+              {currentPageIndex + 1} / {pages.length}
+            </span>
+            <button className="page-btn" onClick={goToNextPage} disabled={currentPageIndex >= pages.length - 1}>
+              <ChevronRight size={16} />
+            </button>
+            <button
+              className="page-btn"
+              onClick={addNewPage}
+              title="Tambah halaman baru"
+              style={{ color: 'var(--ios-purple)' }}
+            >
+              <FilePlus size={16} />
+            </button>
+          </div>
 
-            {/* Page Navigation */}
-            <div className="page-indicator">
-              <button
-                className="page-btn"
-                onClick={goToPrevPage}
-                disabled={currentPageIndex === 0}
-              >
-                <ChevronLeft size={16} />
-              </button>
-              <span style={{ color: '#b2bec3', fontSize: '13px', minWidth: '60px', textAlign: 'center' }}>
-                {currentPageIndex + 1} / {pages.length}
-              </span>
-              <button
-                className="page-btn"
-                onClick={goToNextPage}
-                disabled={currentPageIndex >= pages.length - 1}
-              >
-                <ChevronRight size={16} />
-              </button>
-              <button
-                className="page-btn"
-                onClick={addNewPage}
-                title="Tambah halaman baru"
-                style={{ background: 'rgba(108, 92, 231, 0.15)', color: '#a29bfe' }}
-              >
-                <FilePlus size={16} />
-              </button>
-            </div>
+          {/* Right: Auto-save */}
+          <div className="autosave-indicator">
+            <div className="autosave-dot"></div>
+            <span>Tersimpan</span>
           </div>
         </div>
       </header>
 
       {/* Toolbar */}
-      <div style={{ maxWidth: '1400px', margin: '0 auto', width: '100%', padding: '12px 24px 0' }}>
+      <div style={{ maxWidth: '900px', margin: '0 auto', width: '100%', padding: '8px 16px 0' }}>
         <div className="editor-toolbar">
-          {/* Text Formatting */}
           <button
             className={`toolbar-btn ${editor?.isActive('bold') ? 'is-active' : ''}`}
             onClick={() => editor?.chain().focus().toggleBold().run()}
@@ -361,7 +336,6 @@ export function EditorPage() {
 
           <div className="toolbar-divider" />
 
-          {/* Text Alignment */}
           <button
             className={`toolbar-btn ${editor?.isActive({ textAlign: 'left' }) ? 'is-active' : ''}`}
             onClick={() => editor?.chain().focus().setTextAlign('left').run()}
@@ -386,7 +360,6 @@ export function EditorPage() {
 
           <div className="toolbar-divider" />
 
-          {/* Lists */}
           <button
             className={`toolbar-btn ${editor?.isActive('bulletList') ? 'is-active' : ''}`}
             onClick={() => editor?.chain().focus().toggleBulletList().run()}
@@ -401,8 +374,6 @@ export function EditorPage() {
           >
             <ListOrdered size={16} />
           </button>
-
-          {/* Indent / Outdent */}
           <button
             className="toolbar-btn"
             onClick={() => {
@@ -412,7 +383,7 @@ export function EditorPage() {
                 editor?.chain().focus().insertContent('\u00A0\u00A0\u00A0\u00A0').run();
               }
             }}
-            title="Indent (Tab)"
+            title="Indent"
           >
             <Indent size={16} />
           </button>
@@ -423,14 +394,13 @@ export function EditorPage() {
                 editor?.chain().focus().liftListItem('listItem').run();
               }
             }}
-            title="Outdent (Shift+Tab)"
+            title="Outdent"
           >
             <Outdent size={16} />
           </button>
 
           <div className="toolbar-divider" />
 
-          {/* Highlighter */}
           <div className="highlight-btn" style={{ position: 'relative' }}>
             <button
               className={`toolbar-btn ${editor?.isActive('highlight') ? 'is-active' : ''}`}
@@ -461,12 +431,12 @@ export function EditorPage() {
                   className="highlight-color"
                   style={{
                     background: 'transparent',
-                    border: '2px solid rgba(255,255,255,0.3)',
+                    border: '2px solid rgba(0,0,0,0.15)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontSize: '12px',
-                    color: '#b2bec3',
+                    color: 'var(--text-tertiary)',
                   }}
                   title="Hapus stabilo"
                   onClick={() => {
@@ -482,25 +452,15 @@ export function EditorPage() {
 
           <div className="toolbar-divider" />
 
-          {/* Insert */}
-          <button
-            className="toolbar-btn"
-            onClick={insertImage}
-            title="Sisipkan Gambar"
-          >
+          <button className="toolbar-btn" onClick={insertImage} title="Sisipkan Gambar">
             <ImagePlus size={16} />
           </button>
-          <button
-            className="toolbar-btn"
-            onClick={insertTable}
-            title="Sisipkan Tabel"
-          >
+          <button className="toolbar-btn" onClick={insertTable} title="Sisipkan Tabel">
             <TableIcon size={16} />
           </button>
 
           <div style={{ flex: 1 }} />
 
-          {/* Export */}
           <div style={{ position: 'relative' }}>
             <button
               className="toolbar-btn"
@@ -535,25 +495,16 @@ export function EditorPage() {
         </div>
       </div>
 
-      {/* Paper Area - Fixed Size */}
+      {/* Paper Area */}
       <div className="paper-container">
         <div className="paper-scale-wrapper">
           <div ref={paperRef} className="notebook-paper">
             <EditorContent editor={editor} />
           </div>
-          {/* New Page Button below paper */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            marginTop: '16px',
-            marginBottom: '24px',
-          }}>
-            <button
-              onClick={addNewPage}
-              className="btn-add-page"
-            >
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px', marginBottom: '24px' }}>
+            <button onClick={addNewPage} className="btn-add-page">
               <Plus size={16} />
-              Halaman Baru
+              Tambah halaman
             </button>
           </div>
         </div>
@@ -562,7 +513,7 @@ export function EditorPage() {
       {/* Toast */}
       {toast && (
         <div className="toast">
-          <Check size={16} color="#00b894" />
+          <Check size={16} color="#34C759" />
           {toast}
         </div>
       )}
