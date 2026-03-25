@@ -1180,6 +1180,32 @@ body {
   margin-top: auto;
 }
 
+/* ===== TextBox & Arrow Extensions ===== */
+.text-box-node {
+  border: 1.5px solid var(--ios-blue);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: 12px 0;
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.text-box-content p {
+  margin: 0 !important;
+}
+
+.arrow-node {
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  margin: 0 4px;
+}
+
+.arrow-node svg {
+  width: 20px;
+  height: 20px;
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 768px) {
   .notebook-paper {
