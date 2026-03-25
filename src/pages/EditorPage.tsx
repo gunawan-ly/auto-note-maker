@@ -2,6 +2,8 @@ import { useCallback, useRef, useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEditor, EditorContent } from '@tiptap/react';
 import { StarterKit } from '@tiptap/starter-kit';
+import { Tldraw } from 'tldraw';
+import 'tldraw/tldraw.css';
 import { Underline } from '@tiptap/extension-underline';
 import TextAlign from '@tiptap/extension-text-align';
 import Highlight from '@tiptap/extension-highlight';
@@ -32,6 +34,8 @@ import {
   Indent,
   Outdent,
   FilePlus,
+  PenTool,
+  Type,
 } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../lib/db';
@@ -62,6 +66,7 @@ export function EditorPage() {
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [editorContent, setEditorContent] = useState('');
+  const [isCanvasMode, setIsCanvasMode] = useState(false);
   const paperRef = useRef<HTMLDivElement>(null);
 
   const currentPage = pages[currentPageIndex];
@@ -301,10 +306,28 @@ export function EditorPage() {
             </button>
           </div>
 
-          {/* Right: Auto-save */}
-          <div className="autosave-indicator">
-            <div className="autosave-dot"></div>
-            <span>Tersimpan</span>
+          {/* Right: Auto-save & Mode */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div className="view-toggle" style={{ background: 'var(--bg-secondary)', padding: '4px', borderRadius: '12px' }}>
+              <button
+                className={`view-toggle-btn ${!isCanvasMode ? 'active' : ''}`}
+                onClick={() => setIsCanvasMode(false)}
+                title="Mode Teks"
+              >
+                <Type size={16} />
+              </button>
+              <button
+                className={`view-toggle-btn ${isCanvasMode ? 'active' : ''}`}
+                onClick={() => setIsCanvasMode(true)}
+                title="Mode Kanvas (Gambar/Bentuk)"
+              >
+                <PenTool size={16} />
+              </button>
+            </div>
+            <div className="autosave-indicator">
+              <div className="autosave-dot"></div>
+              <span>Tersimpan</span>
+            </div>
           </div>
         </div>
       </header>
@@ -495,19 +518,25 @@ export function EditorPage() {
         </div>
       </div>
 
-      {/* Paper Area */}
-      <div className="paper-container">
-        <div className="paper-scale-wrapper">
-          <div ref={paperRef} className="notebook-paper">
-            <EditorContent editor={editor} />
+      {/* Paper / Canvas Area */}
+      <div className="paper-container" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        {isCanvasMode ? (
+          <div style={{ flex: 1, position: 'relative', margin: '16px', borderRadius: '16px', overflow: 'hidden', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)', backgroundColor: '#fff' }}>
+            <Tldraw persistenceKey={`notebook-${notebookId}-page-${currentPage?.id}`} />
           </div>
-          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px', marginBottom: '24px' }}>
-            <button onClick={addNewPage} className="btn-add-page">
-              <Plus size={16} />
-              Tambah halaman
-            </button>
+        ) : (
+          <div className="paper-scale-wrapper">
+            <div ref={paperRef} className="notebook-paper">
+              <EditorContent editor={editor} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px', marginBottom: '24px' }}>
+              <button onClick={addNewPage} className="btn-add-page">
+                <Plus size={16} />
+                Tambah halaman
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Toast */}
