@@ -471,14 +471,14 @@ export function EditorPage() {
 
           <button
             className="toolbar-btn"
-            onClick={() => editor?.chain().focus().insertContent('<div data-type="text-box"><p></p></div>').run()}
+            onClick={() => editor?.chain().focus().insertContent({ type: 'textBox', attrs: { x: 100, y: Math.max(100, window.scrollY) } }).run()}
             title="Sisipkan Text Box"
           >
             <Type size={16} />
           </button>
           <button
             className="toolbar-btn"
-            onClick={() => editor?.chain().focus().insertContent('<span data-type="arrow"></span>').run()}
+            onClick={() => editor?.chain().focus().insertContent({ type: 'arrow', attrs: { startX: 100, startY: Math.max(100, window.scrollY), endX: 250, endY: Math.max(100, window.scrollY) } }).run()}
             title="Sisipkan Panah"
           >
             <ArrowRight size={16} />

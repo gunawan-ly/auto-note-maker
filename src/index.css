@@ -1201,9 +1201,27 @@ body {
   margin: 0 4px;
 }
 
-.arrow-node svg {
-  width: 20px;
+.text-box-drag-handle {
   height: 20px;
+  background: rgba(0, 0, 0, 0.04);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  cursor: move;
+  border-radius: 6px 6px 0 0;
+  margin: -8px -12px 8px -12px;
+  transition: background 0.2s ease;
+}
+
+.text-box-drag-handle:hover {
+  background: rgba(0, 122, 255, 0.15);
+}
+
+.text-box-node.is-selected {
+  outline: 2px solid var(--ios-blue);
+  box-shadow: 0 4px 16px rgba(0, 122, 255, 0.2);
+}
+
+.arrow-node-wrapper.is-selected svg g {
+  stroke-width: 4px;
 }
 
 /* ===== Responsive ===== */
